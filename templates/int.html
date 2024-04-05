@@ -8,12 +8,19 @@
 </head>
 
 <body>
-    <h1>{{n}}</h1>
-    <ul>
-        {% for fact in facts %}
-        <li>{{ fact }}</li>
-        {% endfor %}
-    </ul>
+    <h1>{{ n }}</h1>
+
+    <div class="manual">
+        {{ info.as_deref().unwrap_or("")|safe }}
+    </div>
+
+    <div class="auto">
+        <ul>
+            {% for fact in facts %}
+            <li>{{ fact }}</li>
+            {% endfor %}
+        </ul>
+    </div>
 </body>
 
 </html>

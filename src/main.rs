@@ -19,10 +19,11 @@ async fn main() {
 #[template(path = "int.html")]
 struct IntTemplate {
     n: Arc<Integer>,
+    info: Option<String>,
     facts: Vec<String>,
 }
 
-async fn handle_int(Path(param): Path<String>) -> Result<IntTemplate, (StatusCode, String)> {
+async fn handle_int<'a>(Path(param): Path<String>) -> Result<IntTemplate, (StatusCode, String)> {
     let Ok(n) = Integer::parse(&param).map(rug::Complete::complete) else {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -52,5 +53,7 @@ async fn handle_int(Path(param): Path<String>) -> Result<IntTemplate, (StatusCod
         }
     }
 
-    Ok(IntTemplate { n, facts })
+    let info = tokio::fs::read_to_string(format!("templates/{n}.html")).await.ok();
+
+    Ok(IntTemplate { n, info, facts })
 }
