@@ -1,7 +1,7 @@
-use std::fmt::Write;
 use std::sync::Arc;
 
-use axum::{extract::Path, http::StatusCode, response::Html, routing::get, Router};
+use askama::Template;
+use axum::{extract::Path, http::StatusCode, routing::get, Router};
 use num::{BigUint, Num};
 use tokio::task::JoinSet;
 
@@ -15,7 +15,14 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn handle_int(Path(param): Path<String>) -> Result<Html<String>, (StatusCode, String)> {
+#[derive(Template)]
+#[template(path = "int.html")]
+struct IntTemplate {
+    n: Arc<BigUint>,
+    facts: Vec<String>,
+}
+
+async fn handle_int(Path(param): Path<String>) -> Result<IntTemplate, (StatusCode, String)> {
     let Ok(n) = BigUint::from_str_radix(&param, 10) else {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -31,13 +38,12 @@ async fn handle_int(Path(param): Path<String>) -> Result<Html<String>, (StatusCo
         tasks.spawn_blocking(move || nerd(n));
     }
 
-    let mut result = String::new();
-    writeln!(result, "<h1>{n}</h1>\n<ul>").unwrap();
+    let mut facts = Vec::new();
     while let Some(res) = tasks.join_next().await {
         if let Ok(Some(fact)) = res {
-            writeln!(result, "<li>{fact}</li>").unwrap();
+            facts.push(fact);
         }
     }
-    write!(result, "</ul>").unwrap();
-    Ok(Html(result))
+    
+    Ok(IntTemplate { n, facts })
 }
