@@ -10,3 +10,23 @@ pub fn triangular(n: Arc<Integer>) -> Option<String> {
     let root = (disc - 1) / 2;
     Some(format!("Is the {root}th triangular number."))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use proptest::prelude::*;
+    use rug::Complete;
+
+    proptest! {
+        #[test]
+        fn positive_match(n in "[0-9]+") {
+            let nth = Integer::parse(n).unwrap().complete();
+            let x = (&nth + &nth*&nth).complete()/2;
+            prop_assert_eq!(
+                triangular(Arc::new(x)),
+                Some(format!("Is the {nth}th triangular number."))
+            );
+        }
+    }
+}
