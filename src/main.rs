@@ -26,9 +26,16 @@ async fn handle_int(Path(param): Path<String>) -> Result<IntTemplate, (StatusCod
     let Ok(n) = Integer::parse(&param).map(rug::Complete::complete) else {
         return Err((
             StatusCode::BAD_REQUEST,
-            format!("Error: {param:?} could not be parsed as an unsigned integer."),
+            format!("Error: {param:?} could not be parsed as a natural number."),
         ));
     };
+    if n.is_negative() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("Error: {n} is not a natural number."),
+        ));
+    }
+
     let n = Arc::new(n);
 
     // Could/should we use scoped threads here?
