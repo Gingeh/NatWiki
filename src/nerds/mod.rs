@@ -1,10 +1,23 @@
 use std::sync::Arc;
 
 use rug::Integer;
+use thingbuf::{mpsc, recycling::WithCapacity};
 
 mod parity;
 mod prime;
 mod triangular;
 
-pub const NERDS: &[fn(Arc<Integer>) -> Option<String>] =
-    &[parity::parity, triangular::triangular, prime::prime];
+pub async fn ask_nerds(n: Arc<Integer>) -> Vec<String> {
+    let (tx, rx) = mpsc::with_recycle(16, WithCapacity::new());
+
+    tokio::spawn(parity::parity(n.clone(), tx.clone()));
+    tokio::spawn(prime::prime(n.clone(), tx.clone()));
+    tokio::spawn(triangular::triangular(n.clone(), tx.clone()));
+    drop(tx);
+
+    let mut facts = Vec::new();
+    while let Some(fact) = rx.recv().await {
+        facts.push(fact);
+    }
+    facts
+}

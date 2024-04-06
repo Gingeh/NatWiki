@@ -3,7 +3,6 @@ use std::sync::Arc;
 use askama::Template;
 use axum::{extract::Path, http::StatusCode, routing::get, Router};
 use rug::Integer;
-use tokio::task::JoinSet;
 
 mod nerds;
 
@@ -39,21 +38,12 @@ async fn handle_int<'a>(Path(param): Path<String>) -> Result<IntTemplate, (Statu
 
     let n = Arc::new(n);
 
-    // Could/should we use scoped threads here?
-    let mut tasks = JoinSet::new();
-    for nerd in nerds::NERDS {
-        let n = Arc::clone(&n);
-        tasks.spawn_blocking(move || nerd(n));
-    }
-
-    let mut facts = Vec::new();
-    while let Some(res) = tasks.join_next().await {
-        if let Ok(Some(fact)) = res {
-            facts.push(fact);
-        }
-    }
-
-    let info = tokio::fs::read_to_string(format!("templates/{n}.html")).await.ok();
+    let get_facts = async {
+        tokio::fs::read_to_string(format!("templates/{n}.html"))
+            .await
+            .ok()
+    };
+    let (info, facts) = tokio::join!(get_facts,nerds::ask_nerds(n.clone()));
 
     Ok(IntTemplate { n, info, facts })
 }

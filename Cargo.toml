@@ -8,6 +8,7 @@ askama = { version = "0.12", features = ["with-axum"] }
 askama_axum = "0.4"
 axum = "0.7"
 rug = { version = "1.24", default-features = false, features = ["integer"] }
+thingbuf = "0.1"
 tokio = { version = "1", features = ["full"] }
 
 [dev-dependencies]
