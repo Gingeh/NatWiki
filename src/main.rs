@@ -5,6 +5,7 @@ use axum::{extract::Path, http::StatusCode, routing::get, Router};
 use rug::Integer;
 use tokio::task::JoinSet;
 
+mod filters;
 mod nerds;
 
 #[tokio::main]
@@ -53,7 +54,9 @@ async fn handle_int<'a>(Path(param): Path<String>) -> Result<IntTemplate, (Statu
         }
     }
 
-    let info = tokio::fs::read_to_string(format!("templates/{n}.html")).await.ok();
+    let info = tokio::fs::read_to_string(format!("templates/{n}.html"))
+        .await
+        .ok();
 
     Ok(IntTemplate { n, info, facts })
 }

@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 askama = { version = "0.12", features = ["with-axum"] }
 askama_axum = "0.4"
+askama_escape = "0.10.3"
 axum = "0.7"
 rug = { version = "1.24", default-features = false, features = ["integer"] }
 tokio = { version = "1", features = ["full"] }
