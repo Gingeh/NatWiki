@@ -3,6 +3,7 @@ use std::sync::Arc;
 use rug::Integer;
 use thingbuf::{mpsc, recycling::WithCapacity};
 
+mod factors;
 mod parity;
 mod prime;
 mod triangular;

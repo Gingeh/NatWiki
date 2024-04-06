@@ -4,6 +4,7 @@ use askama::Template;
 use axum::{extract::Path, http::StatusCode, routing::get, Router};
 use rug::Integer;
 
+mod filters;
 mod nerds;
 
 #[tokio::main]

@@ -17,7 +17,7 @@
     <div class="auto">
         <ul>
             {% for fact in facts %}
-            <li>{{ fact }}</li>
+            <li>{{ fact|mathfmt|safe }}</li>
             {% endfor %}
         </ul>
     </div>
