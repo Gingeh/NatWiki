@@ -9,7 +9,7 @@ mod prime;
 mod triangular;
 
 pub async fn ask_nerds(n: Arc<Integer>) -> Vec<String> {
-    let (tx, rx) = mpsc::with_recycle(16, WithCapacity::new());
+    let (tx, rx) = mpsc::with_recycle(1, WithCapacity::new());
 
     tokio::spawn(factors::factors(n.clone(), tx.clone()));
     tokio::spawn(parity::parity(n.clone(), tx.clone()));

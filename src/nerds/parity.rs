@@ -20,12 +20,12 @@ mod tests {
     use proptest::prelude::*;
     use rug::Complete;
     use thingbuf::mpsc;
-    use tokio::runtime::Runtime;
+    use tokio::runtime;
 
     proptest! {
         #[test]
         fn even(n in "[0-9]+") {
-            Runtime::new().unwrap().block_on(async {
+            runtime::Builder::new_current_thread().build().unwrap().block_on(async {
                 let x = Integer::parse(n).unwrap().complete() * 2;
                 let (tx, rx) = mpsc::with_recycle(1, WithCapacity::new());
                 parity(Arc::new(x), tx).await;
@@ -38,7 +38,7 @@ mod tests {
 
         #[test]
         fn odd(n in "[0-9]+") {
-            Runtime::new().unwrap().block_on(async {
+            runtime::Builder::new_current_thread().build().unwrap().block_on(async {
                 let x = Integer::parse(n).unwrap().complete() * 2 + 1;
                 let (tx, rx) = mpsc::with_recycle(1, WithCapacity::new());
                 parity(Arc::new(x), tx).await;

@@ -9,7 +9,7 @@ fn parse_balanced_parens(s: &mut StrCursor, out: &mut String) {
             '(' => {
                 brack_count += 1;
                 out.push(c);
-            },
+            }
             ')' => {
                 if brack_count == 0 {
                     return;

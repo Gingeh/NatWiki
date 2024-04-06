@@ -39,12 +39,12 @@ async fn handle_int<'a>(Path(param): Path<String>) -> Result<IntTemplate, (Statu
 
     let n = Arc::new(n);
 
-    let get_facts = async {
-        tokio::fs::read_to_string(format!("templates/{n}.html"))
-            .await
-            .ok()
-    };
-    let (info, facts) = tokio::join!(get_facts,nerds::ask_nerds(n.clone()));
+    let get_info = tokio::fs::read_to_string(format!("templates/{n}.html"));
+    let (info, facts) = tokio::join!(get_info, nerds::ask_nerds(n.clone()));
 
-    Ok(IntTemplate { n, info, facts })
+    Ok(IntTemplate {
+        n,
+        info: info.ok(),
+        facts,
+    })
 }
