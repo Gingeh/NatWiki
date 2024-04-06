@@ -11,6 +11,7 @@ mod triangular;
 pub async fn ask_nerds(n: Arc<Integer>) -> Vec<String> {
     let (tx, rx) = mpsc::with_recycle(16, WithCapacity::new());
 
+    tokio::spawn(factors::factors(n.clone(), tx.clone()));
     tokio::spawn(parity::parity(n.clone(), tx.clone()));
     tokio::spawn(prime::prime(n.clone(), tx.clone()));
     tokio::spawn(triangular::triangular(n.clone(), tx.clone()));

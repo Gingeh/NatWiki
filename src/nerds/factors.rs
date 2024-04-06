@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use rug::Integer;
+use thingbuf::{mpsc::Sender, recycling::WithCapacity};
 
 const LIMIT: u32 = 100_000_000;
 
@@ -38,14 +39,16 @@ fn factors_impl(mut n: u32) -> Vec<(u32, u32)> {
     factors
 }
 
-pub fn factors(n: Arc<Integer>) -> Option<String> {
-    let n = n.to_u32()?;
+pub async fn factors(n: Arc<Integer>, tx: Sender<String, WithCapacity>) {
+    let Some(n) = n.to_u32() else {
+        return;
+    };
     if n <= 1 || n > LIMIT {
-        return None;
+        return;
     }
     let factors = factors_impl(n);
     if factors.is_empty() {
-        return None;
+        return;
     }
     let factors_text: Vec<_> = factors
         .into_iter()
@@ -58,7 +61,9 @@ pub fn factors(n: Arc<Integer>) -> Option<String> {
         })
         .collect();
     let formatted = factors_text.join("×");
-    Some(format!("The prime factors of this number are {formatted}."))
+    tx.send(format!("The prime factors of this number are {formatted}."))
+        .await
+        .unwrap();
 }
 
 #[cfg(test)]
@@ -66,19 +71,25 @@ mod tests {
     use super::*;
 
     use proptest::prelude::*;
+    use thingbuf::mpsc;
+    use tokio::runtime::Runtime;
 
     #[test]
     fn factors_format_properly() {
-        macro_rules! check {
-            ($a:expr, $b:expr) => {
-                assert_eq!(
-                    factors(Arc::new(Integer::from($a))),
-                    Some(concat!("The prime factors of this number are ", $b, ".").to_owned())
-                )
-            };
-        }
-        check!(19, "19");
-        check!(198900, "2^(2)×3^(2)×5^(2)×13×17");
+        Runtime::new().unwrap().block_on(async {
+            let (tx, rx) = mpsc::with_recycle(1, WithCapacity::new());
+            macro_rules! check {
+                ($a:expr, $b:expr) => {
+                    factors(Arc::new(Integer::from($a)), tx.clone()).await;
+                    assert_eq!(
+                        rx.recv().await,
+                        Some(concat!("The prime factors of this number are ", $b, ".").to_owned())
+                    )
+                };
+            }
+            check!(19, "19");
+            check!(198900, "2^(2)×3^(2)×5^(2)×13×17");
+        });
     }
 
     proptest! {
