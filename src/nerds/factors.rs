@@ -51,9 +51,9 @@ pub fn factors(n: Arc<Integer>) -> Option<String> {
         .into_iter()
         .map(|(k, count)| {
             if count == 1 {
-                format!("{k}")
+                format!("(#{k})")
             } else {
-                format!("{k}^({count})")
+                format!("(#{k})(^{count})")
             }
         })
         .collect();
@@ -77,8 +77,8 @@ mod tests {
                 )
             };
         }
-        check!(19, "19");
-        check!(198900, "2^(2)×3^(2)×5^(2)×13×17");
+        check!(19, "(#19)");
+        check!(198900, "(#2)(^2)×(#3)(^2)×(#5)(^2)×(#13)×(#17)");
     }
 
     proptest! {
