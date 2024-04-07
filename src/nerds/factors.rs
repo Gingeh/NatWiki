@@ -39,6 +39,25 @@ fn factors_impl(mut n: u32) -> Vec<(u32, u32)> {
     factors
 }
 
+/// The sum of divisors of a number N is multiplicative,
+/// so to compute it we can simply compute it for all prime factors
+/// ans(p^k) = 1 + p^1 + p^2 + p^3 + ... + p^k
+/// and multiply together the result.
+fn sum_of_divisors(factors: &[(u32, u32)]) -> Integer {
+    factors
+        .iter()
+        .map(|(p, k)| {
+            let mut res = Integer::ONE.clone();
+            let mut prod = Integer::ONE.clone();
+            for _ in 0..*k {
+                prod *= p;
+                res += &prod;
+            }
+            res
+        })
+        .product()
+}
+
 pub async fn factors(n: Arc<Integer>, tx: mpsc::Sender<String>) {
     let Some(n) = n.to_u32() else {
         return;
@@ -50,6 +69,7 @@ pub async fn factors(n: Arc<Integer>, tx: mpsc::Sender<String>) {
     if factors.is_empty() {
         return;
     }
+    let divisor_sum = sum_of_divisors(&factors);
     let factors_text: Vec<_> = factors
         .into_iter()
         .map(|(k, count)| {
@@ -64,6 +84,23 @@ pub async fn factors(n: Arc<Integer>, tx: mpsc::Sender<String>) {
     tx.send(format!("The prime factors of this number are {formatted}."))
         .await
         .unwrap();
+
+    let aliquot_characteristic = match divisor_sum.partial_cmp(&(2 * n)).unwrap() {
+        std::cmp::Ordering::Less => "a deficient",
+        std::cmp::Ordering::Equal => "a perfect",
+        std::cmp::Ordering::Greater => "an abundant",
+    };
+    tx.send(format!(
+        "The sum of this number's divisors is (#{}), making this {aliquot_characteristic} number.",
+        &divisor_sum
+    ))
+    .await
+    .unwrap();
+    if divisor_sum == 2 * n - 1 {
+        tx.send(format!("This number is an almost perfect number."))
+            .await
+            .unwrap();
+    }
 }
 
 #[cfg(test)]
@@ -75,19 +112,39 @@ mod tests {
     #[test]
     fn factors_format_properly() {
         crate::test_harness!(|| {
-            let (tx, mut rx) = mpsc::channel(1);
             macro_rules! check {
                 ($a:expr, $b:expr) => {
-                    factors(Arc::new(Integer::from($a)), tx.clone()).await;
-                    assert_eq!(
-                        rx.recv().await,
-                        Some(concat!("The prime factors of this number are ", $b, ".").to_owned())
-                    )
+                    let (tx, mut rx) = mpsc::channel(1);
+                    tokio::select! {
+                        _ = factors(Arc::new(Integer::from($a)), tx.clone()) => {},
+                        msg = rx.recv() => assert_eq!(
+                            msg,
+                            Some(concat!("The prime factors of this number are ", $b, ".").to_owned())
+                        )
+                    }
                 };
             }
             check!(19, "(#19)");
             check!(198900, "(#2)(^(#2))×(#3)(^(#2))×(#5)(^(#2))×(#13)×(#17)");
         });
+    }
+
+    #[test]
+    fn sum_of_divisors_cases() {
+        macro_rules! check {
+            ($a:expr, $b:expr) => {
+                let fs = factors_impl($a);
+                assert_eq!(sum_of_divisors(&fs), $b);
+            };
+        }
+
+        check!(2, 3);
+        check!(5, 6);
+        check!(4, 7);
+        check!(6, 6 * 2);
+        check!(12, 28);
+        check!(16, 31);
+        check!(28, 28 * 2);
     }
 
     proptest! {
@@ -142,6 +199,19 @@ mod tests {
                 }
             }
             prop_assert_eq!(fab, merged);
+        }
+
+        #[test]
+        fn sum_of_divisors_is_multiplicative(mut a in 2..10_000u32, mut b in 2..10_000u32) {
+            let mut tmp = Integer::from(a);
+            tmp.gcd_u_mut(b);
+            let gcd = tmp.to_u32().unwrap();
+            a /= gcd;
+            b /= gcd;
+            // Now they're both coprime, so we can properly test multiplicativity.
+            let a_sum = sum_of_divisors(&factors_impl(a));
+            let b_sum = sum_of_divisors(&factors_impl(b));
+            prop_assert_eq!(a_sum*b_sum, sum_of_divisors(&factors_impl(a*b)))
         }
     }
 }
