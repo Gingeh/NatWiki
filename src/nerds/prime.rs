@@ -20,23 +20,20 @@ mod tests {
 
     use proptest::prelude::*;
     use rug::Complete;
-    use tokio::runtime;
 
-    proptest! {
-        #[test]
-        fn no_composites(a in "[0-9]+", b in "[0-9]+") {
-            runtime::Builder::new_current_thread().build().unwrap().block_on(async {
-                let a = Integer::parse(a).unwrap().complete() + 2;
-                let b = Integer::parse(b).unwrap().complete() + 2;
-                let x = a*b;
+    #[test]
+    fn no_composites() {
+        crate::test_harness!(|(a in "[0-9]+", b in "[0-9]+")| {
+            let a = Integer::parse(a).unwrap().complete() + 2;
+            let b = Integer::parse(b).unwrap().complete() + 2;
+            let x = a*b;
 
-                let (tx, mut rx) = mpsc::channel(1);
-                prime(Arc::new(x), tx).await;
-                assert_eq!(
-                    rx.recv().await,
-                    None
-                );
-            });
-        }
+            let (tx, mut rx) = mpsc::channel(1);
+            prime(Arc::new(x), tx).await;
+            prop_assert_eq!(
+                rx.recv().await,
+                None
+            );
+        });
     }
 }

@@ -17,25 +17,23 @@ pub async fn triangular(n: Arc<Integer>, tx: mpsc::Sender<String>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_harness;
 
     use proptest::prelude::*;
     use rug::Complete;
-    use tokio::runtime;
 
-    proptest! {
-        #[test]
-        fn positive_match(n in "[0-9]+") {
-            runtime::Builder::new_current_thread().build().unwrap().block_on(async {
-                let nth = Integer::parse(n).unwrap().complete();
-                let x = (&nth + &nth*&nth).complete()/2;
+    #[test]
+    fn positive_match() {
+        test_harness!(|(n in "[0-9]+")| {
+            let nth = Integer::parse(n).unwrap().complete();
+            let x = (&nth + &nth*&nth).complete()/2;
 
-                let (tx, mut rx) = mpsc::channel(1);
-                triangular(Arc::new(x), tx).await;
-                assert_eq!(
-                    rx.recv().await,
-                    Some(format!("Is the (#{nth})th triangular number."))
-                );
-            });
-        }
+            let (tx, mut rx) = mpsc::channel(1);
+            triangular(Arc::new(x), tx).await;
+            prop_assert_eq!(
+                rx.recv().await,
+                Some(format!("Is the (#{nth})th triangular number."))
+            );
+        });
     }
 }

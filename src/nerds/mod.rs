@@ -25,3 +25,25 @@ pub async fn ask_nerds(n: Arc<Integer>) -> Vec<String> {
     }
     facts
 }
+
+#[macro_export]
+macro_rules! test_harness {
+    (|| $body:block) => {
+        // don't use proptest
+        tokio::runtime::Builder::new_current_thread()
+            .build()
+            .unwrap()
+            .block_on(async move $body);
+    };
+    (|($($v:pat in $e:expr),+)| $body:block) => {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .build()
+            .unwrap();
+        proptest!(|($($v in $e),*)| {
+            rt.block_on(async move {
+                $body;
+                Ok(())
+            })?;
+        });
+    };
+}
