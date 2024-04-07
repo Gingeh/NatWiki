@@ -8,7 +8,7 @@ pub fn triangular(n: Arc<Integer>) -> Option<String> {
         return None;
     }
     let root = (disc - 1) / 2;
-    Some(format!("Is the {root}th triangular number."))
+    Some(format!("Is the (#{root})th triangular number."))
 }
 
 #[cfg(test)]
@@ -25,7 +25,7 @@ mod tests {
             let x = (&nth + &nth*&nth).complete()/2;
             prop_assert_eq!(
                 triangular(Arc::new(x)),
-                Some(format!("Is the {nth}th triangular number."))
+                Some(format!("Is the (#{nth})th triangular number."))
             );
         }
     }
