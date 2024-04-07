@@ -69,11 +69,11 @@ pub async fn factors(n: Arc<Integer>, tx: mpsc::Sender<String>) {
     if factors.is_empty() {
         return;
     }
-    let divisor_sum = sum_of_divisors(&factors);
+
     let factors_text: Vec<_> = factors
-        .into_iter()
+        .iter()
         .map(|(k, count)| {
-            if count == 1 {
+            if *count == 1 {
                 format!("(#{k})")
             } else {
                 format!("(#{k})(^(#{count}))")
@@ -85,19 +85,19 @@ pub async fn factors(n: Arc<Integer>, tx: mpsc::Sender<String>) {
         .await
         .unwrap();
 
-    let aliquot_characteristic = match divisor_sum.partial_cmp(&(2 * n)).unwrap() {
-        std::cmp::Ordering::Less => "a deficient",
-        std::cmp::Ordering::Equal => "a perfect",
-        std::cmp::Ordering::Greater => "an abundant",
+     let divisor_sum = sum_of_divisors(&factors);
+     let (aliquot_order, aliquot_characteristic) = match divisor_sum.partial_cmp(&(2 * n)).unwrap() {
+         std::cmp::Ordering::Less => ("less than", "a deficient"),
+         std::cmp::Ordering::Equal => ("equal to", "a perfect"),
+         std::cmp::Ordering::Greater => ("greater than", "an abundant"),
     };
     tx.send(format!(
-        "The sum of this number's divisors is (#{}), making this {aliquot_characteristic} number.",
-        &divisor_sum
+        "Is {aliquot_order} half the sum of its divisors ((#{divisor_sum})), making it {aliquot_characteristic} number.",
     ))
     .await
     .unwrap();
     if divisor_sum == 2 * n - 1 {
-        tx.send(format!("This number is an almost perfect number."))
+        tx.send(format!("Is an almost perfect number."))
             .await
             .unwrap();
     }
