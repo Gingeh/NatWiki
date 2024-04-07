@@ -514,6 +514,7 @@ dependencies = [
  "askama_axum",
  "askama_escape",
  "axum",
+ "num-traits",
  "proptest",
  "rug",
  "tokio",
@@ -527,6 +528,15 @@ checksum = "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
 dependencies = [
  "memchr",
  "minimal-lexical",
+]
+
+[[package]]
+name = "num-integer"
+version = "0.1.46"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7969661fd2958a5cb096e56c8e1ad0444ac2bbcd0061bd28660485a44879858f"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
@@ -739,6 +749,8 @@ dependencies = [
  "gmp-mpfr-sys",
  "libc",
  "libm",
+ "num-integer",
+ "num-traits",
 ]
 
 [[package]]
