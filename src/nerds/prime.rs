@@ -1,12 +1,16 @@
 use std::sync::Arc;
 
 use rug::{integer::IsPrime, Integer};
+use tokio::sync::mpsc;
 
-pub fn prime(n: Arc<Integer>) -> Option<String> {
+pub async fn prime(n: Arc<Integer>, tx: mpsc::Sender<String>) {
     match n.is_probably_prime(30) {
-        IsPrime::Yes => Some("Is a prime number.".to_string()),
-        IsPrime::Probably => Some("Is almost certainly a prime number.".to_string()),
-        IsPrime::No => None,
+        IsPrime::Yes => tx.send("Is a prime number.".to_string()).await.unwrap(),
+        IsPrime::Probably => tx
+            .send("Is almost certainly a prime number.".to_string())
+            .await
+            .unwrap(),
+        IsPrime::No => {}
     }
 }
 
@@ -16,17 +20,23 @@ mod tests {
 
     use proptest::prelude::*;
     use rug::Complete;
+    use tokio::runtime;
 
     proptest! {
         #[test]
         fn no_composites(a in "[0-9]+", b in "[0-9]+") {
-            let a = Integer::parse(a).unwrap().complete() + 2;
-            let b = Integer::parse(b).unwrap().complete() + 2;
-            let x = a*b;
-            prop_assert_eq!(
-                prime(Arc::new(x)),
-                None
-            );
+            runtime::Builder::new_current_thread().build().unwrap().block_on(async {
+                let a = Integer::parse(a).unwrap().complete() + 2;
+                let b = Integer::parse(b).unwrap().complete() + 2;
+                let x = a*b;
+
+                let (tx, mut rx) = mpsc::channel(1);
+                prime(Arc::new(x), tx).await;
+                assert_eq!(
+                    rx.recv().await,
+                    None
+                );
+            });
         }
     }
 }

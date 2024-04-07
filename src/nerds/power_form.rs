@@ -13,6 +13,7 @@ use std::sync::Arc;
 
 use num_traits::identities::One;
 use rug::{Complete, Integer};
+use tokio::sync::mpsc;
 
 const SMALL_PRIMES: &[u32] = &[
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,
@@ -113,12 +114,15 @@ fn power_form_impl(mut n: Integer) -> Option<(Integer, u32)> {
     }
 }
 
-pub fn power_form(n: Arc<Integer>) -> Option<String> {
+pub async fn power_form(n: Arc<Integer>, tx: mpsc::Sender<String>) {
     if n.is_zero() || n.as_ref().is_one() {
-        return None;
+        return;
     }
-    let (x, y) = power_form_impl(Arc::unwrap_or_clone(n))?;
-    Some(format!("This number is a perfect power: (#{x})(^(#{y}))."))
+    if let Some((x, y)) = power_form_impl(Arc::unwrap_or_clone(n)) {
+        tx.send(format!("This number is a perfect power: (#{x})(^(#{y}))."))
+            .await
+            .unwrap();
+    }
 }
 
 #[cfg(test)]
@@ -126,7 +130,7 @@ mod tests {
     use super::*;
 
     use proptest::prelude::*;
-    use rug::{ops::Pow, Complete};
+    use rug::ops::Pow;
 
     #[test]
     fn simpler_tests() {

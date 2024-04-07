@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use rug::Integer;
+use tokio::sync::mpsc;
 
 mod factors;
 mod parity;
@@ -8,10 +9,19 @@ mod power_form;
 mod prime;
 mod triangular;
 
-pub const NERDS: &[fn(Arc<Integer>) -> Option<String>] = &[
-    parity::parity,
-    triangular::triangular,
-    prime::prime,
-    factors::factors,
-    power_form::power_form,
-];
+pub async fn ask_nerds(n: Arc<Integer>) -> Vec<String> {
+    let (tx, mut rx) = mpsc::channel(1);
+
+    tokio::spawn(factors::factors(n.clone(), tx.clone()));
+    tokio::spawn(parity::parity(n.clone(), tx.clone()));
+    tokio::spawn(power_form::power_form(n.clone(), tx.clone()));
+    tokio::spawn(prime::prime(n.clone(), tx.clone()));
+    tokio::spawn(triangular::triangular(n.clone(), tx.clone()));
+    drop((n, tx));
+
+    let mut facts = Vec::new();
+    while let Some(fact) = rx.recv().await {
+        facts.push(fact);
+    }
+    facts
+}
