@@ -5,6 +5,7 @@ use thingbuf::{mpsc, recycling::WithCapacity};
 
 mod factors;
 mod parity;
+mod power_form;
 mod prime;
 mod triangular;
 

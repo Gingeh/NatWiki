@@ -9,7 +9,7 @@ pub async fn triangular(n: Arc<Integer>, tx: Sender<String, WithCapacity>) {
         return;
     }
     let root = (disc - 1) / 2;
-    tx.send(format!("Is the {root}th triangular number."))
+    tx.send(format!("Is the (#{root})th triangular number."))
         .await
         .unwrap();
 }
@@ -34,7 +34,7 @@ mod tests {
                 triangular(Arc::new(x), tx).await;
                 assert_eq!(
                     rx.recv().await,
-                    Some(format!("Is the {nth}th triangular number."))
+                    Some(format!("Is the (#{nth})th triangular number."))
                 );
             });
         }
