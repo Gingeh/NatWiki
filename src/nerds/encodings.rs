@@ -42,35 +42,32 @@ mod tests {
     use super::*;
 
     use proptest::prelude::*;
-    use tokio::runtime;
 
-    proptest! {
-        #[test]
-        fn roundtrip_bin(n in "0|1[0-1]*") {
-            runtime::Builder::new_current_thread().build().unwrap().block_on(async {
-                let x = Integer::from_str_radix(&n, 2).unwrap();
-                let (tx, mut rx) = mpsc::channel(3);
-                encodings(Arc::new(x), tx).await;
-                assert_eq!(
-                    rx.recv().await,
-                    Some(format!("Is {n} in binary."))
-                )
-            });
-        }
+    #[test]
+    fn roundtrip_bin() {
+        crate::test_harness!(|(n in "0|1[0-1]*")| {
+            let x = Integer::from_str_radix(&n, 2).unwrap();
+            let (tx, mut rx) = mpsc::channel(3);
+            encodings(Arc::new(x), tx).await;
+            prop_assert_eq!(
+                rx.recv().await,
+                Some(format!("Is {n} in binary."))
+            )
+        });
+    }
 
-        #[test]
-        fn roundtrip_hex(n in "0|[1-9A-F][0-9A-F]*") {
-            runtime::Builder::new_current_thread().build().unwrap().block_on(async {
-                let x = Integer::from_str_radix(&n, 16).unwrap();
-                let (tx, mut rx) = mpsc::channel(3);
-                encodings(Arc::new(x), tx).await;
-                rx.recv().await.unwrap();
-                assert_eq!(
-                    rx.recv().await,
-                    Some(format!("Is {n} in hexadecimal."))
-                )
-            });
-        }
+    #[test]
+    fn roundtrip_hex() {
+        crate::test_harness!(|(n in "0|[1-9A-F][0-9A-F]*")| {
+            let x = Integer::from_str_radix(&n, 16).unwrap();
+            let (tx, mut rx) = mpsc::channel(3);
+            encodings(Arc::new(x), tx).await;
+            rx.recv().await.unwrap();
+            prop_assert_eq!(
+                rx.recv().await,
+                Some(format!("Is {n} in hexadecimal."))
+            )
+        });
     }
 
     #[test]
