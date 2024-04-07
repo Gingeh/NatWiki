@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use rug::Integer;
-use thingbuf::{mpsc::Sender, recycling::WithCapacity};
+use tokio::sync::mpsc;
 
-pub async fn parity(n: Arc<Integer>, tx: Sender<String, WithCapacity>) {
+pub async fn parity(n: Arc<Integer>, tx: mpsc::Sender<String>) {
     tx.send(if n.is_even() {
         "Is an even number.".to_string()
     } else {
@@ -19,7 +19,6 @@ mod tests {
 
     use proptest::prelude::*;
     use rug::Complete;
-    use thingbuf::mpsc;
     use tokio::runtime;
 
     proptest! {
@@ -27,7 +26,7 @@ mod tests {
         fn even(n in "[0-9]+") {
             runtime::Builder::new_current_thread().build().unwrap().block_on(async {
                 let x = Integer::parse(n).unwrap().complete() * 2;
-                let (tx, rx) = mpsc::with_recycle(1, WithCapacity::new());
+                let (tx, mut rx) = mpsc::channel(1);
                 parity(Arc::new(x), tx).await;
                 assert_eq!(
                     rx.recv().await,
@@ -40,7 +39,7 @@ mod tests {
         fn odd(n in "[0-9]+") {
             runtime::Builder::new_current_thread().build().unwrap().block_on(async {
                 let x = Integer::parse(n).unwrap().complete() * 2 + 1;
-                let (tx, rx) = mpsc::with_recycle(1, WithCapacity::new());
+                let (tx, mut rx) = mpsc::channel(1);
                 parity(Arc::new(x), tx).await;
                 assert_eq!(
                     rx.recv().await,

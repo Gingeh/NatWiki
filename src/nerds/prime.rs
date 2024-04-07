@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use rug::{integer::IsPrime, Integer};
-use thingbuf::{mpsc::Sender, recycling::WithCapacity};
+use tokio::sync::mpsc;
 
-pub async fn prime(n: Arc<Integer>, tx: Sender<String, WithCapacity>) {
+pub async fn prime(n: Arc<Integer>, tx: mpsc::Sender<String>) {
     match n.is_probably_prime(30) {
         IsPrime::Yes => tx.send("Is a prime number.".to_string()).await.unwrap(),
         IsPrime::Probably => tx
@@ -20,7 +20,6 @@ mod tests {
 
     use proptest::prelude::*;
     use rug::Complete;
-    use thingbuf::mpsc;
     use tokio::runtime;
 
     proptest! {
@@ -31,7 +30,7 @@ mod tests {
                 let b = Integer::parse(b).unwrap().complete() + 2;
                 let x = a*b;
 
-                let (tx, rx) = mpsc::with_recycle(1, WithCapacity::new());
+                let (tx, mut rx) = mpsc::channel(1);
                 prime(Arc::new(x), tx).await;
                 assert_eq!(
                     rx.recv().await,

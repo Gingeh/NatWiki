@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use rug::Integer;
-use thingbuf::{mpsc::Sender, recycling::WithCapacity};
+use tokio::sync::mpsc;
 
 const LIMIT: u32 = 100_000_000;
 
@@ -39,7 +39,7 @@ fn factors_impl(mut n: u32) -> Vec<(u32, u32)> {
     factors
 }
 
-pub async fn factors(n: Arc<Integer>, tx: Sender<String, WithCapacity>) {
+pub async fn factors(n: Arc<Integer>, tx: mpsc::Sender<String>) {
     let Some(n) = n.to_u32() else {
         return;
     };
@@ -71,7 +71,6 @@ mod tests {
     use super::*;
 
     use proptest::prelude::*;
-    use thingbuf::mpsc;
     use tokio::runtime;
 
     #[test]
@@ -80,7 +79,7 @@ mod tests {
             .build()
             .unwrap()
             .block_on(async {
-                let (tx, rx) = mpsc::with_recycle(1, WithCapacity::new());
+                let (tx, mut rx) = mpsc::channel(1);
                 macro_rules! check {
                     ($a:expr, $b:expr) => {
                         factors(Arc::new(Integer::from($a)), tx.clone()).await;

@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use rug::Integer;
-use thingbuf::{mpsc::Sender, recycling::WithCapacity};
+use tokio::sync::mpsc;
 
-pub async fn triangular(n: Arc<Integer>, tx: Sender<String, WithCapacity>) {
+pub async fn triangular(n: Arc<Integer>, tx: mpsc::Sender<String>) {
     let (disc, rem) = (Arc::unwrap_or_clone(n) * 8_u8 + 1_u8).sqrt_rem(Integer::new());
     if !rem.is_zero() || disc.is_even() {
         return;
@@ -20,7 +20,6 @@ mod tests {
 
     use proptest::prelude::*;
     use rug::Complete;
-    use thingbuf::mpsc;
     use tokio::runtime;
 
     proptest! {
@@ -30,7 +29,7 @@ mod tests {
                 let nth = Integer::parse(n).unwrap().complete();
                 let x = (&nth + &nth*&nth).complete()/2;
 
-                let (tx, rx) = mpsc::with_recycle(1, WithCapacity::new());
+                let (tx, mut rx) = mpsc::channel(1);
                 triangular(Arc::new(x), tx).await;
                 assert_eq!(
                     rx.recv().await,

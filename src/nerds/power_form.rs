@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use num_traits::identities::One;
 use rug::{Complete, Integer};
-use thingbuf::{mpsc::Sender, recycling::WithCapacity};
+use tokio::sync::mpsc;
 
 const SMALL_PRIMES: &[u32] = &[
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,
@@ -114,7 +114,7 @@ fn power_form_impl(mut n: Integer) -> Option<(Integer, u32)> {
     }
 }
 
-pub async fn power_form(n: Arc<Integer>, tx: Sender<String, WithCapacity>) {
+pub async fn power_form(n: Arc<Integer>, tx: mpsc::Sender<String>) {
     if n.is_zero() || n.as_ref().is_one() {
         return;
     }
