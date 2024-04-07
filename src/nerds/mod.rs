@@ -4,6 +4,7 @@ use rug::Integer;
 
 mod factors;
 mod parity;
+mod power_form;
 mod prime;
 mod triangular;
 
@@ -12,4 +13,5 @@ pub const NERDS: &[fn(Arc<Integer>) -> Option<String>] = &[
     triangular::triangular,
     prime::prime,
     factors::factors,
+    power_form::power_form,
 ];
