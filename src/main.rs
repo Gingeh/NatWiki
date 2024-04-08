@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use askama::Template;
-use axum::{extract::Path, http::StatusCode, routing::get, Router};
+use axum::{extract::Path, http::StatusCode, response::Redirect, routing::get, Router};
+use rand::Rng;
 use rug::Integer;
 
 mod filters;
@@ -9,7 +10,9 @@ mod nerds;
 
 #[tokio::main]
 async fn main() {
-    let app = Router::new().route("/:n", get(handle_int));
+    let app = Router::new()
+        .route("/:n", get(handle_int))
+        .route("/random", get(handle_random));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
@@ -23,7 +26,7 @@ struct IntTemplate {
     facts: Vec<String>,
 }
 
-async fn handle_int<'a>(Path(param): Path<String>) -> Result<IntTemplate, (StatusCode, String)> {
+async fn handle_int(Path(param): Path<String>) -> Result<IntTemplate, (StatusCode, String)> {
     let Ok(n) = Integer::parse(&param).map(rug::Complete::complete) else {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -47,4 +50,16 @@ async fn handle_int<'a>(Path(param): Path<String>) -> Result<IntTemplate, (Statu
         info: info.ok(),
         facts,
     })
+}
+
+async fn handle_random() -> Redirect {
+    let mut rng = rand::thread_rng();
+    let mut digits = String::new();
+
+    digits.push(rng.gen_range('1'..='9'));
+    while rng.gen_bool(0.75) {
+        digits.push(rng.gen_range('0'..='9'));
+    }
+
+    Redirect::to(&format!("/{digits}"))
 }
