@@ -5,6 +5,7 @@ use tokio::sync::mpsc;
 
 mod encodings;
 mod factors;
+mod fibonacci;
 mod parity;
 mod power_form;
 mod prime;
@@ -15,6 +16,7 @@ pub async fn ask_nerds(n: Arc<Integer>) -> Vec<String> {
 
     tokio::spawn(encodings::encodings(n.clone(), tx.clone()));
     tokio::spawn(factors::factors(n.clone(), tx.clone()));
+    tokio::spawn(fibonacci::fibonacci(n.clone(), tx.clone()));
     tokio::spawn(parity::parity(n.clone(), tx.clone()));
     tokio::spawn(power_form::power_form(n.clone(), tx.clone()));
     tokio::spawn(prime::prime(n.clone(), tx.clone()));
