@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{mem::swap, sync::Arc};
 
 use rug::{Assign, Complete, Integer};
 use tokio::sync::mpsc;
@@ -19,16 +19,46 @@ fn is_fib(n: &Integer) -> bool {
 }
 
 fn fib_index(n: &Integer) -> Integer {
-    let mut a = Integer::ZERO;
-    let mut b = Integer::ONE.clone();
+    if n.is_zero() {
+        return Integer::ZERO;
+    }
+
+    let mut idx = Integer::from(1);
+    let mut a = Integer::from(1);      // fib(2 * idx)
+    let mut b = Integer::from(2);      // fib(2 * idx + 1)
+    let mut a_prev = Integer::from(1); // fib(idx)
+    let mut b_prev = Integer::from(1); // fib(idx + 1)
     let mut tmp = Integer::new();
-    let mut idx = Integer::ZERO;
+
+    // double idx until fib(2 * idx) overshoots n
+    while *n > a {
+        swap(&mut a_prev, &mut a);
+        swap(&mut b_prev, &mut b);
+
+        a.assign(&b_prev * 2_u8 - &a_prev);
+        a *= &a_prev;
+
+        b.assign(&a_prev);
+        b.square_mut();
+        tmp.assign(&b_prev);
+        tmp.square_mut();
+        b += &tmp;
+
+        idx *= 2;
+    }
+
+    // take a step back
+    swap(&mut a_prev, &mut a);
+    swap(&mut b_prev, &mut b);
+
+    // increment idx until fib(idx) >= n
     while *n > a {
         tmp.assign(&a + &b);
-        a.assign(&b);
-        b.assign(&tmp);
+        swap(&mut a, &mut b);
+        swap(&mut tmp, &mut b);
         idx += 1;
     }
+
     idx
 }
 
