@@ -9,6 +9,7 @@ askama_axum = "0.4"
 askama_escape = "0.10.3"
 axum = "0.7"
 num-traits = "0.2.18"
+phf = { version = "0.11.2", features = ["macros"] }
 rand = "0.8"
 rug = { version = "1.24", default-features = false, features = ["integer", "num-traits"] }
 tokio = { version = "1", features = ["full"] }
