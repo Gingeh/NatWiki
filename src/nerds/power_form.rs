@@ -15,6 +15,8 @@ use num_traits::identities::One;
 use rug::{Complete, Integer};
 use tokio::sync::mpsc;
 
+use super::Fact;
+
 const SMALL_PRIMES: &[u32] = &[
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,
 ];
@@ -114,14 +116,17 @@ fn power_form_impl(mut n: Integer) -> Option<(Integer, u32)> {
     }
 }
 
-pub async fn power_form(n: Arc<Integer>, tx: mpsc::Sender<String>) {
+pub async fn power_form(n: Arc<Integer>, tx: mpsc::Sender<Fact>) {
     if n.is_zero() || n.as_ref().is_one() {
         return;
     }
     if let Some((x, y)) = power_form_impl(Arc::unwrap_or_clone(n)) {
-        tx.send(format!("This number is a perfect power: (#{x})(^(#{y}))."))
-            .await
-            .unwrap();
+        tx.send(Fact::Form(
+            "Perfect power form".to_owned(),
+            format!("(#{x})(^(#{y}))"),
+        ))
+        .await
+        .unwrap();
     }
 }
 

@@ -3,15 +3,19 @@ use std::sync::Arc;
 use rug::Integer;
 use tokio::sync::mpsc;
 
-pub async fn triangular(n: Arc<Integer>, tx: mpsc::Sender<String>) {
+use super::Fact;
+
+pub async fn triangular(n: Arc<Integer>, tx: mpsc::Sender<Fact>) {
     let (disc, rem) = (Arc::unwrap_or_clone(n) * 8_u8 + 1_u8).sqrt_rem(Integer::new());
     if !rem.is_zero() || disc.is_even() {
         return;
     }
     let root = (disc - 1) / 2;
-    tx.send(format!("Is the (#{root})th triangular number."))
-        .await
-        .unwrap();
+    tx.send(Fact::Basic(format!(
+        "Is the (#{root})th triangular number."
+    )))
+    .await
+    .unwrap();
 }
 
 #[cfg(test)]
@@ -32,7 +36,7 @@ mod tests {
             triangular(Arc::new(x), tx).await;
             prop_assert_eq!(
                 rx.recv().await,
-                Some(format!("Is the (#{nth})th triangular number."))
+                Some(Fact::Basic(format!("Is the (#{nth})th triangular number.")))
             );
         });
     }

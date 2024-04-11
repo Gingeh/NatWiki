@@ -22,8 +22,8 @@ async fn main() {
 #[template(path = "int.html")]
 struct IntTemplate {
     n: Arc<Integer>,
-    info: Option<String>,
-    facts: Vec<String>,
+    manual: Option<String>,
+    info: nerds::NumberInfo,
 }
 
 async fn handle_int(Path(param): Path<String>) -> Result<IntTemplate, (StatusCode, String)> {
@@ -42,13 +42,13 @@ async fn handle_int(Path(param): Path<String>) -> Result<IntTemplate, (StatusCod
 
     let n = Arc::new(n);
 
-    let get_info = tokio::fs::read_to_string(format!("templates/{n}.html"));
-    let (info, facts) = tokio::join!(get_info, nerds::ask_nerds(n.clone()));
+    let get_manual = tokio::fs::read_to_string(format!("templates/{n}.html"));
+    let (manual, facts) = tokio::join!(get_manual, nerds::ask_nerds(n.clone()));
 
     Ok(IntTemplate {
         n,
-        info: info.ok(),
-        facts,
+        manual: manual.ok(),
+        info: facts,
     })
 }
 
