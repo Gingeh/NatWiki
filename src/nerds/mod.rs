@@ -10,6 +10,7 @@ mod parity;
 mod power_form;
 mod prime;
 mod triangular;
+mod ip;
 
 #[derive(Default, Debug, Clone)]
 pub struct NumberInfo {
@@ -25,6 +26,21 @@ enum Fact {
     Form(String, String),
 }
 
+// More convenient initialization.
+impl Fact {
+    #[inline(always)]
+    fn form<A, B>(a: A, b: B) -> Fact
+        where String: From<A> + From<B>
+    {
+        Fact::Form(a.into(), b.into())
+    }
+
+    #[inline(always)]
+    fn basic<A>(a: A) -> Fact where String: From<A>, {
+        Fact::Basic(a.into())
+    }
+}
+
 pub async fn ask_nerds(n: Arc<Integer>) -> NumberInfo {
     let (tx, mut rx) = mpsc::channel::<Fact>(1);
 
@@ -35,6 +51,7 @@ pub async fn ask_nerds(n: Arc<Integer>) -> NumberInfo {
     tokio::spawn(power_form::power_form(n.clone(), tx.clone()));
     tokio::spawn(prime::prime(n.clone(), tx.clone()));
     tokio::spawn(triangular::triangular(n.clone(), tx.clone()));
+    tokio::spawn(ip::ip(n.clone(), tx.clone()));
     drop((n, tx));
 
     let mut info = NumberInfo::default();

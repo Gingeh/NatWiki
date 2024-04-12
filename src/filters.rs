@@ -75,6 +75,15 @@ fn num_link_handler(s: &mut StrCursor, out: &mut HtmlEmitter) {
     }
 }
 
+fn inline_code_handler(s: &mut StrCursor, out: &mut HtmlEmitter) {
+    s.next();
+    out.emit_raw_str("<code>");
+    parse_balanced_parens(s, out);
+    // eat closing paren
+    s.next();
+    out.emit_raw_str("</code>");
+}
+
 fn parse_balanced_parens(s: &mut StrCursor, out: &mut HtmlEmitter) {
     let mut brack_count = 0u32;
     while let Some(&c) = s.peek() {
@@ -84,6 +93,7 @@ fn parse_balanced_parens(s: &mut StrCursor, out: &mut HtmlEmitter) {
                 match s.peek() {
                     Some(&'^') => superscript_handler(s, out),
                     Some(&'#') => num_link_handler(s, out),
+                    Some(&'`') => inline_code_handler(s, out),
                     _ => {
                         brack_count += 1;
                         out.emit_text_char(c);
@@ -177,4 +187,8 @@ fn mathfmt_test() {
         "links fail without parens #11",
         "links fail without parens #11"
     );
+
+    check!("code block (`test)", "code block <code>test</code>");
+    
+    check!("multi-nested (^(`(^(#11))))", "multi-nested <sup><code><sup><a href=\"/11\">11</a></sup></code></sup>")
 }

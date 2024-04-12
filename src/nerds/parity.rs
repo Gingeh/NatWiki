@@ -6,10 +6,10 @@ use tokio::sync::mpsc;
 use super::Fact;
 
 pub async fn parity(n: Arc<Integer>, tx: mpsc::Sender<Fact>) {
-    tx.send(Fact::Basic(if n.is_even() {
-        "Is an even number.".to_string()
+    tx.send(Fact::basic(if n.is_even() {
+        "Is an even number."
     } else {
-        "Is an odd number.".to_string()
+        "Is an odd number."
     }))
     .await
     .unwrap();
