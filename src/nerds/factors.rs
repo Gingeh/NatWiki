@@ -3,6 +3,8 @@ use std::sync::Arc;
 use rug::Integer;
 use tokio::sync::mpsc;
 
+use super::Fact;
+
 const LIMIT: u32 = 100_000_000;
 
 /// Expects 2 <= n <= LIMIT.
@@ -58,7 +60,7 @@ fn sum_of_divisors(factors: &[(u32, u32)]) -> Integer {
         .product()
 }
 
-pub async fn factors(n: Arc<Integer>, tx: mpsc::Sender<String>) {
+pub async fn factors(n: Arc<Integer>, tx: mpsc::Sender<Fact>) {
     let Some(n) = n.to_u32() else {
         return;
     };
@@ -81,23 +83,23 @@ pub async fn factors(n: Arc<Integer>, tx: mpsc::Sender<String>) {
         })
         .collect();
     let formatted = factors_text.join("×");
-    tx.send(format!("The prime factors of this number are {formatted}."))
+    tx.send(Fact::Form("Prime factorization".into(), formatted))
         .await
         .unwrap();
 
-     let divisor_sum = sum_of_divisors(&factors);
-     let (aliquot_order, aliquot_characteristic) = match divisor_sum.partial_cmp(&(2 * n)).unwrap() {
-         std::cmp::Ordering::Less => ("less than", "a deficient"),
-         std::cmp::Ordering::Equal => ("equal to", "a perfect"),
-         std::cmp::Ordering::Greater => ("greater than", "an abundant"),
+    let divisor_sum = sum_of_divisors(&factors);
+    let (aliquot_order, aliquot_characteristic) = match divisor_sum.partial_cmp(&(2 * n)).unwrap() {
+        std::cmp::Ordering::Less => ("less than", "a deficient"),
+        std::cmp::Ordering::Equal => ("equal to", "a perfect"),
+        std::cmp::Ordering::Greater => ("greater than", "an abundant"),
     };
-    tx.send(format!(
+    tx.send(Fact::Basic(format!(
         "Is {aliquot_order} half the sum of its divisors ((#{divisor_sum})), making it {aliquot_characteristic} number.",
-    ))
+    )))
     .await
     .unwrap();
     if divisor_sum == 2 * n - 1 {
-        tx.send(format!("Is an almost perfect number."))
+        tx.send(Fact::Basic("Is an almost perfect number.".to_string()))
             .await
             .unwrap();
     }
@@ -119,7 +121,7 @@ mod tests {
                         _ = factors(Arc::new(Integer::from($a)), tx.clone()) => {},
                         msg = rx.recv() => assert_eq!(
                             msg,
-                            Some(concat!("The prime factors of this number are ", $b, ".").to_owned())
+                            Some(Fact::Form("Prime factorization".to_owned(), $b.into()))
                         )
                     }
                 };

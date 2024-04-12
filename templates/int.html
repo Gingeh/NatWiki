@@ -5,18 +5,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NatWiki: {{ n }}</title>
+<style>
+td {
+    border: 1px solid black;
+    padding: 1em;
+}
+table {
+    border-collapse: collapse;
+}
+</style>
 </head>
 
 <body>
     <h1>{{ n }}</h1>
 
     <div class="manual">
-        {{ info.as_deref().unwrap_or("")|safe }}
+        {{ manual.as_deref().unwrap_or("")|safe }}
+    </div>
+
+    <div class="forms">
+        <h3>Alternative forms</h3>
+        <table>
+            <tbody>
+                {% for form in info.forms %}
+                <tr><td>{{ form.0 }}</td><td>{{ form.1|mathfmt|safe }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
     <div class="auto">
         <ul>
-            {% for fact in facts %}
+            {% for fact in info.facts %}
             <li>{{ fact|mathfmt|safe }}</li>
             {% endfor %}
         </ul>

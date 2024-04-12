@@ -173,5 +173,8 @@ fn mathfmt_test() {
         "nested<sup>link<a href=\"/11\">11</a></sup>"
     );
 
-    check!("links fail without parens #11", "links fail without parens #11");
+    check!(
+        "links fail without parens #11",
+        "links fail without parens #11"
+    );
 }

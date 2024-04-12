@@ -3,11 +3,18 @@ use std::sync::Arc;
 use rug::{integer::IsPrime, Integer};
 use tokio::sync::mpsc;
 
-pub async fn prime(n: Arc<Integer>, tx: mpsc::Sender<String>) {
+use super::Fact;
+
+pub async fn prime(n: Arc<Integer>, tx: mpsc::Sender<Fact>) {
     match n.is_probably_prime(30) {
-        IsPrime::Yes => tx.send("Is a prime number.".to_string()).await.unwrap(),
+        IsPrime::Yes => tx
+            .send(Fact::Basic("Is a prime number.".to_string()))
+            .await
+            .unwrap(),
         IsPrime::Probably => tx
-            .send("Is almost certainly a prime number.".to_string())
+            .send(Fact::Basic(
+                "Is almost certainly a prime number.".to_string(),
+            ))
             .await
             .unwrap(),
         IsPrime::No => {}

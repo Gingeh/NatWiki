@@ -11,8 +11,22 @@ mod power_form;
 mod prime;
 mod triangular;
 
-pub async fn ask_nerds(n: Arc<Integer>) -> Vec<String> {
-    let (tx, mut rx) = mpsc::channel(1);
+#[derive(Default, Debug, Clone)]
+pub struct NumberInfo {
+    pub facts: Vec<String>,
+    /// Alternate forms of the number, e.g. its binary or hex representation.
+    /// Stored as tuple (description, alternate form).
+    pub forms: Vec<(String, String)>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Fact {
+    Basic(String),
+    Form(String, String),
+}
+
+pub async fn ask_nerds(n: Arc<Integer>) -> NumberInfo {
+    let (tx, mut rx) = mpsc::channel::<Fact>(1);
 
     tokio::spawn(encodings::encodings(n.clone(), tx.clone()));
     tokio::spawn(factors::factors(n.clone(), tx.clone()));
@@ -23,11 +37,14 @@ pub async fn ask_nerds(n: Arc<Integer>) -> Vec<String> {
     tokio::spawn(triangular::triangular(n.clone(), tx.clone()));
     drop((n, tx));
 
-    let mut facts = Vec::new();
+    let mut info = NumberInfo::default();
     while let Some(fact) = rx.recv().await {
-        facts.push(fact);
+        match fact {
+            Fact::Basic(s) => info.facts.push(s),
+            Fact::Form(desc, form) => info.forms.push((desc, form)),
+        }
     }
-    facts
+    info
 }
 
 #[macro_export]

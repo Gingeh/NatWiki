@@ -4,16 +4,21 @@ use num_traits::Euclid;
 use rug::Integer;
 use tokio::sync::mpsc;
 
-pub async fn encodings(n: Arc<Integer>, tx: mpsc::Sender<String>) {
-    tx.send(format!("Is {:b} in binary.", n.as_ref()))
+use super::Fact;
+
+pub async fn encodings(n: Arc<Integer>, tx: mpsc::Sender<Fact>) {
+    tx.send(Fact::Form("Binary".to_owned(), format!("{:b}", n.as_ref())))
         .await
         .unwrap();
-    tx.send(format!("Is {:X} in hexadecimal.", n.as_ref()))
-        .await
-        .unwrap();
+    tx.send(Fact::Form(
+        "Hexadecimal".to_owned(),
+        format!("{:X}", n.as_ref()),
+    ))
+    .await
+    .unwrap();
 
     if let Some(roman) = n.to_u16().and_then(encode_roman) {
-        tx.send(format!("Is {roman} in roman numerals."))
+        tx.send(Fact::Form("Roman numerals".to_owned(), roman))
             .await
             .unwrap();
     }
@@ -51,7 +56,7 @@ mod tests {
             encodings(Arc::new(x), tx).await;
             prop_assert_eq!(
                 rx.recv().await,
-                Some(format!("Is {n} in binary."))
+                Some(Fact::Form("Binary".into(), format!("{n}")))
             )
         });
     }
@@ -65,7 +70,7 @@ mod tests {
             rx.recv().await.unwrap();
             prop_assert_eq!(
                 rx.recv().await,
-                Some(format!("Is {n} in hexadecimal."))
+                Some(Fact::Form("Hexadecimal".into(), format!("{n}")))
             )
         });
     }

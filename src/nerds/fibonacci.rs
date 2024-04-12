@@ -4,11 +4,16 @@ use phf::phf_map;
 use rug::{Assign, Complete, Integer};
 use tokio::sync::mpsc;
 
-pub async fn fibonacci(n: Arc<Integer>, tx: mpsc::Sender<String>) {
+use super::Fact;
+
+pub async fn fibonacci(n: Arc<Integer>, tx: mpsc::Sender<Fact>) {
     if is_fib(&n) {
-        tx.send(format!("Is the (#{})th fibonacci number.", fib_index(&n)))
-            .await
-            .unwrap();
+        tx.send(Fact::Basic(format!(
+            "Is the (#{})th fibonacci number.",
+            fib_index(&n)
+        )))
+        .await
+        .unwrap();
     }
 }
 

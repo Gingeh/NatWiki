@@ -3,12 +3,14 @@ use std::sync::Arc;
 use rug::Integer;
 use tokio::sync::mpsc;
 
-pub async fn parity(n: Arc<Integer>, tx: mpsc::Sender<String>) {
-    tx.send(if n.is_even() {
+use super::Fact;
+
+pub async fn parity(n: Arc<Integer>, tx: mpsc::Sender<Fact>) {
+    tx.send(Fact::Basic(if n.is_even() {
         "Is an even number.".to_string()
     } else {
         "Is an odd number.".to_string()
-    })
+    }))
     .await
     .unwrap();
 }
@@ -28,7 +30,7 @@ mod tests {
             parity(Arc::new(x), tx).await;
             prop_assert_eq!(
                 rx.recv().await,
-                Some("Is an even number.".to_string())
+                Some(Fact::Basic("Is an even number.".to_string()))
             )
         });
     }
@@ -41,7 +43,7 @@ mod tests {
             parity(Arc::new(x), tx).await;
             prop_assert_eq!(
                 rx.recv().await,
-                Some("Is an odd number.".to_string())
+                Some(Fact::Basic("Is an odd number.".to_string()))
             )
         });
     }
